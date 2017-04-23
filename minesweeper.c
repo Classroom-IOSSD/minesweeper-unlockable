@@ -1,9 +1,22 @@
+//introduce
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include "conio.h"
 #define MAX 10
 
+// modes
+#define END_MODE 0
+#define FLAG_MODE 1
+#define CHECK_MODE 2
+// define TRUE AND FALSE
+#define FALSE 0
+#define TRUE 1
+// define direction
+#define UP '8'
+#define DOWN '2'
+#define LEFT '4'
+#define RIGHT '6'
 // background color
 #define BG_KNRM  "\x1B[0m"
 #define BG_RED  "\x1B[41m"
@@ -84,7 +97,8 @@ void view_table() {
 	// clear screen
 	system("clear");
 
-	int i, j, m, mine_value;
+	int i, j, mine_value;
+	int is_uncoverd, is_clean_area, is_one, is_gt_than_one;
 	for (i = 0; i < MAX; i++) {
 		for (j = 0; j < MAX; j++) {
 			if (x == j && y == i) {
@@ -100,13 +114,18 @@ void view_table() {
 			}
 			mine_value = table_array[i][j];
 
-			if ((mine_value >= 0 && mine_value <= 8) || mine_value == 0 || mine_value == 99)
+			is_uncoverd = (mine_value >= 0 && mine_value <= 8) || mine_value == 0 || mine_value == 99 ? TRUE : FALSE;
+			is_clean_area = mine_value == 10 ? TRUE : FALSE;
+			is_one = mine_value == 11 ? TRUE : FALSE;
+			is_gt_than_one = mine_value > 11 && mine_value <= 18 ? TRUE : FALSE;
+
+			if (is_uncoverd)
 				printf("|X");
-			else if (mine_value == 10) // clean area
+			else if (is_clean_area) // clean area
 				printf("|%s%d%s", TXT_CYN, mine_value - 10, BG_KNRM);
-			else if (mine_value == 11) // the number of near mine is 1
+			else if (is_one) // the number of near mine is 1
 				printf("|%s%d%s", TXT_YEL, mine_value - 10, BG_KNRM);
-			else if (mine_value > 11 && mine_value <= 18) // the number of near mine is greater than 1
+			else if (is_gt_than_one) // the number of near mine is greater than 1
 				printf("|%s%d%s", TXT_RED, mine_value - 10, BG_KNRM);
 			else if ((mine_value >= 20 && mine_value <= 28) || mine_value == 100)
 				printf("|%sF%s", TXT_GRN, BG_KNRM);
@@ -216,22 +235,22 @@ new_game:
 				view_table();
 				direction = getch();
 				// arrow direction
-				if (direction == '8') {
+				if (direction == UP) {
 					// up
 					--y;
 					y = (MAX + y) % MAX;
 				}
-				else if (direction == '2') {
+				else if (direction == DOWN) {
 					// down
 					++y;
 					y = y % MAX;
 				}
-				else if (direction == '4') {
+				else if (direction == LEFT) {
 					//left
 					--x;
 					x = (MAX + x) % MAX;
 				}
-				else if (direction == '6') {
+				else if (direction == RIGHT) {
 					//right
 					++x;
 					x = x % MAX;
@@ -272,22 +291,22 @@ new_game:
 				direction = getch();
 
 				// arrow direction
-				if (direction == '8') {
+				if (direction == UP) {
 					// up
 					--y;
 					y = (MAX + y) % MAX;
 				}
-				else if (direction == '2') {
+				else if (direction == DOWN) {
 					// down
 					++y;
 					y = y % MAX;
 				}
-				else if (direction == '4') {
+				else if (direction == LEFT) {
 					//left
 					--x;
 					x = (MAX + x) % MAX;
 				}
-				else if (direction == '6') {
+				else if (direction == RIGHT) {
 					//right
 					++x;
 					x = x % MAX;
@@ -359,3 +378,4 @@ end_of_game:
 
 	return 0;
 }
+
