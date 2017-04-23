@@ -44,6 +44,8 @@ unsigned char table_array[MAX][MAX];
 int x = 0, y = 0;
 // flag: input mode = 0, flag mode = 1, check mode = 2
 int game_mode = 0;
+//additional flag : input mode = 0, flag mode = 1, check mode = 2, new mode = 3, reset mode = 4
+int mode_flag;
 
 int is_bounded(int row, int column) {
 	if ((row >= 0 && row < MAX) && (column >= 0 && column < MAX))
@@ -151,265 +153,273 @@ void view_table() {
 
 }
 
+void mine_sweeping(int nMines, int mine_value) {
+	char ch;
+	while (nMines != 0 && mode_flag != RESET_MODE) {			// when nMines becomes 0 you will win the game
+
+		if (mode_flag == END_MODE)
+			break;
+
+		else if (mode_flag == NEW_MODE)
+			ch = getch();
+
+		// cursor direction
+		char direction;
+		switch (ch) {
+
+			// flag mode
+		case 'f':
+		case 'F':
+			game_mode = FLAG_MODE;
+			mode_flag = FLAG_MODE;
+			do {
+				view_table();
+				direction = getch();
+				// arrow direction
+				if (direction == UP) {
+					// up
+					--y;
+					y = (MAX + y) % MAX;
+				}
+				else if (direction == DOWN) {
+					// down
+					++y;
+					y = y % MAX;
+				}
+				else if (direction == LEFT) {
+					//left
+					--x;
+					x = (MAX + x) % MAX;
+				}
+				else if (direction == RIGHT) {
+					//right
+					++x;
+					x = x % MAX;
+				}
+				else if (direction == 'c' || direction == 'C') {
+					game_mode = CHECK_MODE;
+					mode_flag = CHECK_MODE;
+					break;
+				}
+				else if (direction == '\n') {
+					mine_value = table_array[y][x];
+
+					if (mine_value == 99) {				// mine case
+						table_array[y][x] += 1;
+						nMines -= 1;				// mine found
+					}
+					else if (mine_value >= 0 && mine_value <= 8) {	// number of mines case (the next cell is a mine)
+						table_array[y][x] += 20;
+					}
+					else if (mine_value >= 20 && mine_value <= 28) {
+						table_array[y][x] -= 20;
+					}
+
+					if (nMines == 0)
+						break;
+				}
+			} while (direction != 'q' && direction != 'Q');
+
+			if (mode_flag == CHECK_MODE) {
+				ch = 'c';
+				break;
+			}
+
+			mode_flag = END_MODE;
+			game_mode = END_MODE;
+
+			break;
+
+			// check cell
+		case 'c':
+		case 'C':
+			game_mode = CHECK_MODE;
+			mode_flag = CHECK_MODE;
+			do {
+				view_table();
+				direction = getch();
+
+				// arrow direction
+				if (direction == UP) {
+					// up
+					--y;
+					y = (MAX + y) % MAX;
+				}
+				else if (direction == DOWN) {
+					// down
+					++y;
+					y = y % MAX;
+				}
+				else if (direction == LEFT) {
+					//left
+					--x;
+					x = (MAX + x) % MAX;
+				}
+				else if (direction == RIGHT) {
+					//right
+					++x;
+					x = x % MAX;
+				}
+				else if (direction == 'f' || direction == 'F') {
+					mode_flag = FLAG_MODE;
+					game_mode = FLAG_MODE;
+					break;
+				}
+
+				else if (direction == '\n') {
+					mine_value = table_array[y][x];
+					if (mine_value == 0)						// blank case
+						uncover_blank_cell(y, x);
+					else if (mine_value == 99) {				// mine case
+						mode_flag = END_MODE;
+						break;
+					}
+					else if (mine_value > 0 && mine_value <= 8)	// number case (the next cell is a mine)
+						table_array[y][x] += 10;
+
+					//	break;
+				}
+			} while (direction != 'q' && direction != 'Q');
+
+			if (mode_flag == FLAG_MODE) {
+				ch = 'f';
+				break;
+			}
+
+			mode_flag = END_MODE;
+			game_mode = END_MODE;
+
+			break;
+
+			// jump to a new game
+		case 'n':
+		case 'N':
+			mode_flag = RESET_MODE;
+			break;
+
+			// exit
+		case 'q':
+		case 'Q':
+			mode_flag = END_MODE;
+			break;
+
+		default:
+			break;
+		}
+	}
+	if (mode_flag == END_MODE) {
+		game_mode = END_MODE;
+		view_table();
+		printf("\nGAME OVER\n");
+
+		if (nMines == 0)
+			printf("you won!!!!\n");
+
+		else
+			printf("BOOM! you LOOSE!\n");
+
+		do {
+			printf("Are you sure to exit? (y or n)? ");
+			ch = getch();
+			putchar('\n');
+			if (ch == 'y' || ch == 'Y') {
+				break;
+			}
+			else if (ch == 'n' || ch == 'N') {
+				mode_flag = NEW_MODE;
+				break;
+			}
+			printf("Please answer y or n\n");
+		} while (1);
+		if (mode_flag == NEW_MODE)
+			return;
+
+		else
+			printf("See you next time!\n");
+
+		fflush(stdin);
+
+		return;
+	}
+}
+int set_mines(int nMines){
+
+	int i, j, newRow, newCol, mine_value, rows[8], columns[8];
+
+	srand(time(NULL));						// random seed
+											// setting cursor
+	x = 0;
+	y = 0;
+	// set all cells to 0
+	for (i = 0; i < 10; i++)
+		for (j = 0; j < 10; j++)
+			table_array[i][j] = 0;
+
+	for (i = 0; i < nMines; i++) {
+		/* initialize random seed: */
+
+		newRow = rand() % 10;					// it generates a integer in the range 0 to 9
+		newCol = rand() % 10;
+
+		// put mines
+		if (table_array[newRow][newCol] != 99) {
+			table_array[newRow][newCol] = 99;
+
+			// Get position of adjacent cells of current cell
+			rows[0] = newRow - 1;
+			columns[0] = newCol + 1;
+			rows[1] = newRow;
+			columns[1] = newCol + 1;
+			rows[2] = newRow + 1;
+			columns[2] = newCol + 1;
+			rows[3] = newRow - 1;
+			columns[3] = newCol;
+			rows[4] = newRow + 1;
+			columns[4] = newCol;
+			rows[5] = newRow - 1;
+			columns[5] = newCol - 1;
+			rows[6] = newRow;
+			columns[6] = newCol - 1;
+			rows[7] = newRow + 1;
+			columns[7] = newCol - 1;
+
+			for (j = 0; j < 8; j++) {
+				mine_value = table_array[rows[j]][columns[j]];
+				if (is_bounded(rows[j], columns[j])) {	// to prevent negative index and out of bounds
+					if (mine_value != 99)																// to prevent remove mines
+						table_array[rows[j]][columns[j]] += 1;									// sums 1 to each adjacent cell
+				}
+			}
+
+		}
+		else {							// to make sure that there are the properly number of mines in table
+			i--;
+			continue;
+		}
+	}
+	return mine_value;
+}
 
 int main(int argc, char *argv[]) {
 
-	char ch;
 	int nMines; // the number of the remaining mines
-	int i, j, newRow, newCol, mine_value, rows[8], columns[8];
-	int mode_flag;
-
+	int mine_value;
 	//new_game:
 	while (TRUE) {
+		
 		mode_flag = NEW_MODE;
 		// the number of mines
 		nMines = 10;
 		if (argc == 2) {
 			nMines = atoi(argv[1]);
 		}
-		srand(time(NULL));						// random seed
-												// setting cursor
-		x = 0;
-		y = 0;
-		// set all cells to 0
-		for (i = 0; i < 10; i++)
-			for (j = 0; j < 10; j++)
-				table_array[i][j] = 0;
-
-		for (i = 0; i < nMines; i++) {
-			/* initialize random seed: */
-
-			newRow = rand() % 10;					// it generates a integer in the range 0 to 9
-			newCol = rand() % 10;
-
-			// put mines
-			if (table_array[newRow][newCol] != 99) {
-				table_array[newRow][newCol] = 99;
-
-				// Get position of adjacent cells of current cell
-				rows[0] = newRow - 1;
-				columns[0] = newCol + 1;
-				rows[1] = newRow;
-				columns[1] = newCol + 1;
-				rows[2] = newRow + 1;
-				columns[2] = newCol + 1;
-				rows[3] = newRow - 1;
-				columns[3] = newCol;
-				rows[4] = newRow + 1;
-				columns[4] = newCol;
-				rows[5] = newRow - 1;
-				columns[5] = newCol - 1;
-				rows[6] = newRow;
-				columns[6] = newCol - 1;
-				rows[7] = newRow + 1;
-				columns[7] = newCol - 1;
-
-				for (j = 0; j < 8; j++) {
-					mine_value = table_array[rows[j]][columns[j]];
-					if (is_bounded(rows[j], columns[j])) {	// to prevent negative index and out of bounds
-						if (mine_value != 99)																// to prevent remove mines
-							table_array[rows[j]][columns[j]] += 1;									// sums 1 to each adjacent cell
-					}
-				}
-
-			}
-			else {							// to make sure that there are the properly number of mines in table
-				i--;
-				continue;
-			}
-		}
-
-
+		mine_value = set_mines(nMines);
 		//
 		view_table();
-		while (nMines != 0 && mode_flag != RESET_MODE) {			// when nMines becomes 0 you will win the game
+		mine_sweeping(nMines, mine_value);
 
-			if (mode_flag == END_MODE)
-				break;
-
-			else if (mode_flag == NEW_MODE)
-				ch = getch();
-
-
-			// cursor direction
-			char direction;
-			switch (ch) {
-
-				// flag mode
-			case 'f':
-			case 'F':
-				game_mode = FLAG_MODE;
-				mode_flag = FLAG_MODE;
-				do {
-					view_table();
-					direction = getch();
-					// arrow direction
-					if (direction == UP) {
-						// up
-						--y;
-						y = (MAX + y) % MAX;
-					}
-					else if (direction == DOWN) {
-						// down
-						++y;
-						y = y % MAX;
-					}
-					else if (direction == LEFT) {
-						//left
-						--x;
-						x = (MAX + x) % MAX;
-					}
-					else if (direction == RIGHT) {
-						//right
-						++x;
-						x = x % MAX;
-					}
-					else if (direction == 'c' || direction == 'C') {
-						game_mode = CHECK_MODE;
-						mode_flag = CHECK_MODE;
-						break;
-					}
-					else if (direction == '\n') {
-						mine_value = table_array[y][x];
-
-						if (mine_value == 99) {				// mine case
-							table_array[y][x] += 1;
-							nMines -= 1;				// mine found
-						}
-						else if (mine_value >= 0 && mine_value <= 8) {	// number of mines case (the next cell is a mine)
-							table_array[y][x] += 20;
-						}
-						else if (mine_value >= 20 && mine_value <= 28) {
-							table_array[y][x] -= 20;
-						}
-
-						if (nMines == 0)
-							break;
-					}
-				} while (direction != 'q' && direction != 'Q');
-
-				if (mode_flag == CHECK_MODE) {
-					ch = 'c';
-					break;
-				}
-
-				mode_flag = END_MODE;
-				game_mode = END_MODE;
-
-				break;
-
-				// check cell
-			case 'c':
-			case 'C':
-				game_mode = CHECK_MODE;
-				mode_flag = CHECK_MODE;
-				do {
-					view_table();
-					direction = getch();
-
-					// arrow direction
-					if (direction == UP) {
-						// up
-						--y;
-						y = (MAX + y) % MAX;
-					}
-					else if (direction == DOWN) {
-						// down
-						++y;
-						y = y % MAX;
-					}
-					else if (direction == LEFT) {
-						//left
-						--x;
-						x = (MAX + x) % MAX;
-					}
-					else if (direction == RIGHT) {
-						//right
-						++x;
-						x = x % MAX;
-					}
-					else if (direction == 'f' || direction == 'F') {
-						mode_flag = FLAG_MODE;
-						game_mode = FLAG_MODE;
-						break;
-					}
-
-					else if (direction == '\n') {
-						mine_value = table_array[y][x];
-						if (mine_value == 0)						// blank case
-							uncover_blank_cell(y, x);
-						else if (mine_value == 99) {				// mine case
-							mode_flag = END_MODE;
-							break;
-						}
-						else if (mine_value > 0 && mine_value <= 8)	// number case (the next cell is a mine)
-							table_array[y][x] += 10;
-
-						//	break;
-					}
-				} while (direction != 'q' && direction != 'Q');
-
-				if (mode_flag == FLAG_MODE) {
-					ch = 'f';
-					break;
-				}
-
-				mode_flag = END_MODE;
-				game_mode = END_MODE;
-
-				break;
-
-				// jump to a new game
-			case 'n':
-			case 'N':
-				mode_flag = RESET_MODE;
-				break;
-
-				// exit
-			case 'q':
-			case 'Q':
-				mode_flag = END_MODE;
-				break;
-
-			default:
-				break;
-			}
-		}
-		if (mode_flag == END_MODE) {
-			game_mode = END_MODE;
-			view_table();
-			printf("\nGAME OVER\n");
-
-			if (nMines == 0)
-				printf("you won!!!!\n");
-
-			else
-				printf("BOOM! you LOOSE!\n");
-
-			do {
-				printf("Are you sure to exit? (y or n)? ");
-				ch = getch();
-				putchar('\n');
-				if (ch == 'y' || ch == 'Y') {
-					break;
-				}
-				else if (ch == 'n' || ch == 'N') {
-					mode_flag = NEW_MODE;
-					break;
-				}
-				printf("Please answer y or n\n");
-			} while (1);
-			if (mode_flag == NEW_MODE)
-				continue;
-
-			else
-				printf("See you next time!\n");
-
-			fflush(stdin);
-
-
-			return 0;
-		}
+		if (mode_flag == END_MODE)
+			break;
 	}
 }
 
