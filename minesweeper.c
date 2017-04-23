@@ -31,6 +31,13 @@ int x = 0, y = 0;
 // flag: input mode = 0, flag mode = 1, check mode = 2
 int game_mode = 0;
 
+int is_bounded(int row, int column) {
+	if ((row >= 0 && row < MAX) && (column >= 0 && column < MAX))
+		return 1;
+	else
+		return 0;
+}
+
 /*This is a recursive function which uncovers blank cells while they are adjacent*/
 int uncover_blank_cell(int row, int col) {
 	int mine_value, rows[8], columns[8], i;
@@ -41,27 +48,27 @@ int uncover_blank_cell(int row, int col) {
 	table_array[row][col] += 10; // uncover current cell
 
 								 // Get position of adjacent cells of current cell
-	rows[0] = row - 1;
+	rows[0] = row - 1; // 0 = upperRight 
 	columns[0] = col + 1;
-	rows[1] = row;
+	rows[1] = row; // 1 = right
 	columns[1] = col + 1;
-	rows[2] = row + 1;
+	rows[2] = row + 1; // 2 = lowerRight
 	columns[2] = col + 1;
-	rows[3] = row - 1;
+	rows[3] = row - 1; // 3 = up
 	columns[3] = col;
-	rows[4] = row + 1;
+	rows[4] = row + 1; // 4 = down
 	columns[4] = col;
-	rows[5] = row - 1;
+	rows[5] = row - 1; // 5 = upperLeft
 	columns[5] = col - 1;
-	rows[6] = row;
+	rows[6] = row; // 6 = left
 	columns[6] = col - 1;
-	rows[7] = row + 1;
+	rows[7] = row + 1; // 7 = lowerLeft
 	columns[7] = col - 1;
 
 	for (i = 0; i < 8; i++) {
 		mine_value = table_array[rows[i]][columns[i]];
 
-		if ((rows[i] >= 0 && rows[i] < MAX) && (columns[i] >= 0 && columns[i] < MAX)) {	// to prevent negative index and out of bounds
+		if (is_bounded(rows[i], columns[i])) {	// to prevent negative index and out of bounds
 			if (mine_value > 0 && mine_value <= 8)
 				table_array[rows[i]][columns[i]] += 10;										// it is a cell with 1-8 number so we need to uncover
 			else if (mine_value == 0)
@@ -176,7 +183,7 @@ new_game:
 
 			for (j = 0; j < 8; j++) {
 				mine_value = table_array[rows[j]][columns[j]];
-				if ((rows[j] >= 0 && rows[j] < MAX) && (columns[j] >= 0 && columns[j] < MAX)) {	// to prevent negative index and out of bounds
+				if (is_bounded(rows[j], columns[j])) {	// to prevent negative index and out of bounds
 					if (mine_value != 99)																// to prevent remove mines
 						table_array[rows[j]][columns[j]] += 1;									// sums 1 to each adjacent cell
 				}
@@ -211,17 +218,23 @@ new_game:
 				// arrow direction
 				if (direction == '8') {
 					// up
-					y = (MAX + --y) % MAX;
+					--y;
+					y = (MAX + y) % MAX;
 				}
 				else if (direction == '2') {
 					// down
-					y = ++y % MAX;
+					++y;
+					y = y % MAX;
 				}
 				else if (direction == '4') {
-					x = (MAX + --x) % MAX;
+					//left
+					--x;
+					x = (MAX + x) % MAX;
 				}
 				else if (direction == '6') {
-					x = ++x % MAX;
+					//right
+					++x;
+					x = x % MAX;
 				}
 				else if (direction == 'c' || direction == 'C') {
 					goto check_mode;
@@ -261,17 +274,23 @@ new_game:
 				// arrow direction
 				if (direction == '8') {
 					// up
-					y = (MAX + --y) % MAX;
+					--y;
+					y = (MAX + y) % MAX;
 				}
 				else if (direction == '2') {
 					// down
-					y = ++y % MAX;
+					++y;
+					y = y % MAX;
 				}
 				else if (direction == '4') {
-					x = (MAX + --x) % MAX;
+					//left
+					--x;
+					x = (MAX + x) % MAX;
 				}
 				else if (direction == '6') {
-					x = ++x % MAX;
+					//right
+					++x;
+					x = x % MAX;
 				}
 				else if (direction == 'f' || direction == 'F') {
 					goto flag_mode;
@@ -340,4 +359,3 @@ end_of_game:
 
 	return 0;
 }
-
