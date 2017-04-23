@@ -157,76 +157,77 @@ int main(int argc, char *argv[]) {
 	char ch;
 	int nMines; // the number of the remaining mines
 	int i, j, newRow, newCol, mine_value, rows[8], columns[8];
-	int mode_flag = NEW_MODE;
+	int mode_flag;
 
-//new_game:
+	//new_game:
 	while (TRUE) {
-			// the number of mines
-			nMines = 10;
-			if (argc == 2) {
-				nMines = atoi(argv[1]);
-			}
-			srand(time(NULL));						// random seed
-													// setting cursor
-			x = 0;
-			y = 0;
-			// set all cells to 0
-			for (i = 0; i < 10; i++)
-				for (j = 0; j < 10; j++)
-					table_array[i][j] = 0;
+		mode_flag = NEW_MODE;
+		// the number of mines
+		nMines = 10;
+		if (argc == 2) {
+			nMines = atoi(argv[1]);
+		}
+		srand(time(NULL));						// random seed
+												// setting cursor
+		x = 0;
+		y = 0;
+		// set all cells to 0
+		for (i = 0; i < 10; i++)
+			for (j = 0; j < 10; j++)
+				table_array[i][j] = 0;
 
-			for (i = 0; i < nMines; i++) {
-				/* initialize random seed: */
+		for (i = 0; i < nMines; i++) {
+			/* initialize random seed: */
 
-				newRow = rand() % 10;					// it generates a integer in the range 0 to 9
-				newCol = rand() % 10;
+			newRow = rand() % 10;					// it generates a integer in the range 0 to 9
+			newCol = rand() % 10;
 
-				// put mines
-				if (table_array[newRow][newCol] != 99) {
-					table_array[newRow][newCol] = 99;
+			// put mines
+			if (table_array[newRow][newCol] != 99) {
+				table_array[newRow][newCol] = 99;
 
-					// Get position of adjacent cells of current cell
-					rows[0] = newRow - 1;
-					columns[0] = newCol + 1;
-					rows[1] = newRow;
-					columns[1] = newCol + 1;
-					rows[2] = newRow + 1;
-					columns[2] = newCol + 1;
-					rows[3] = newRow - 1;
-					columns[3] = newCol;
-					rows[4] = newRow + 1;
-					columns[4] = newCol;
-					rows[5] = newRow - 1;
-					columns[5] = newCol - 1;
-					rows[6] = newRow;
-					columns[6] = newCol - 1;
-					rows[7] = newRow + 1;
-					columns[7] = newCol - 1;
+				// Get position of adjacent cells of current cell
+				rows[0] = newRow - 1;
+				columns[0] = newCol + 1;
+				rows[1] = newRow;
+				columns[1] = newCol + 1;
+				rows[2] = newRow + 1;
+				columns[2] = newCol + 1;
+				rows[3] = newRow - 1;
+				columns[3] = newCol;
+				rows[4] = newRow + 1;
+				columns[4] = newCol;
+				rows[5] = newRow - 1;
+				columns[5] = newCol - 1;
+				rows[6] = newRow;
+				columns[6] = newCol - 1;
+				rows[7] = newRow + 1;
+				columns[7] = newCol - 1;
 
-					for (j = 0; j < 8; j++) {
-						mine_value = table_array[rows[j]][columns[j]];
-						if (is_bounded(rows[j], columns[j])) {	// to prevent negative index and out of bounds
-							if (mine_value != 99)																// to prevent remove mines
-								table_array[rows[j]][columns[j]] += 1;									// sums 1 to each adjacent cell
-						}
+				for (j = 0; j < 8; j++) {
+					mine_value = table_array[rows[j]][columns[j]];
+					if (is_bounded(rows[j], columns[j])) {	// to prevent negative index and out of bounds
+						if (mine_value != 99)																// to prevent remove mines
+							table_array[rows[j]][columns[j]] += 1;									// sums 1 to each adjacent cell
 					}
+				}
 
-				}
-				else {							// to make sure that there are the properly number of mines in table
-					i--;
-					continue;
-				}
 			}
-		
+			else {							// to make sure that there are the properly number of mines in table
+				i--;
+				continue;
+			}
+		}
+
 
 		//
 		view_table();
-		while (nMines != 0) {			// when nMines becomes 0 you will win the game
+		while (nMines != 0 && mode_flag != RESET_MODE) {			// when nMines becomes 0 you will win the game
 
-			if (mode_flag == RESET_MODE || mode_flag == END_MODE)
+			if (mode_flag == END_MODE)
 				break;
 
-			else if (mode_flag == NEW_MODE) 
+			else if (mode_flag == NEW_MODE)
 				ch = getch();
 
 
